@@ -1,0 +1,5 @@
+.vagrant
+build
+*.ks
+*.iso
+tests/*.pyc
