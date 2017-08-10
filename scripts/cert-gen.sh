@@ -28,12 +28,12 @@ cd $dir
 
 # Get a random password for the CA and save it
 passfile=tmp.pass
-password=$(randomString 10)
+password=$(randomString 16)
 echo $password > $passfile
 
 # Generate the CA
 openssl genrsa -aes256 -passout file:$passfile -out ca-key.pem 2048
-openssl req -new -x509 -passin file:$passfile -days 365 -key ca-key.pem -sha256 -out ca.pem -subj "/C=/ST=/L=/O=/OU=/CN=example.com"
+openssl req -new -x509 -passin file:$passfile -days 365 -key ca-key.pem -sha256 -out ca.pem -subj "/C=US/ST=NC/L=Minishift/O=Minishift/OU=Minishift/CN=example.com"
 
 # Generate Server Key and Sign it
 openssl genrsa -out server-key.pem 2048

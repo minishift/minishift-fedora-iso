@@ -13,7 +13,7 @@ ifndef BUILD_ID
     BUILD_ID=local
 endif
 
-default: centos_iso
+default: fedora_iso
 
 .PHONY: init
 init:
@@ -23,23 +23,19 @@ init:
 clean:
 	rm -rf $(BUILD_DIR)
 
-.PHONY: centos_iso
-centos_iso: KICKSTART_FILE=centos-7.ks
-centos_iso: KICKSTART_TEMPLATE=centos-7.template
-centos_iso: ISO_NAME=minishift-centos7
-centos_iso: iso_creation
-
-.PHONY: rhel_iso
-rhel_iso: KICKSTART_FILE=rhel-7.ks
-rhel_iso: KICKSTART_TEMPLATE=rhel-7.template
-rhel_iso: ISO_NAME=minishift-rhel7
-rhel_iso: check_env
-rhel_iso: iso_creation
+.PHONY: fedora_iso
+fedora_iso: KICKSTART_FILE=fedora.ks
+fedora_iso: KICKSTART_TEMPLATE=fedora.template
+fedora_iso: ISO_NAME=minishift-fedora
+fedora_iso: RELEASEVER=26
+fedora_iso: BASEARCH=x86_64
+fedora_iso: iso_creation
 
 .PHONY: iso_creation
 iso_creation: init
 	@handle_user_data='$(HANDLE_USER_DATA)' yum_wrapper='$(YUM_WRAPPER)' cert_gen='$(CERT_GEN)' \
 		version='$(VERSION)' build_id='$(GITTAG)-$(TODAY)-$(BUILD_ID)' \
+                releasever='$(RELEASEVER)' basearch='$(BASEARCH)' \
 		envsubst < $(KICKSTART_TEMPLATE) > $(BUILD_DIR)/$(KICKSTART_FILE)
 	cd $(BUILD_DIR); sudo livecd-creator --config $(BUILD_DIR)/$(KICKSTART_FILE) --logfile=$(BUILD_DIR)/livecd-creator.log --fslabel $(ISO_NAME)
 	# http://askubuntu.com/questions/153833/why-cant-i-mount-the-ubuntu-12-04-installer-isos-in-mac-os-x
@@ -48,22 +44,6 @@ iso_creation: init
 	dd if=$(BUILD_DIR)/$(ISO_NAME).iso bs=2k skip=1 >> ${BUILD_DIR}/tmp.iso
 	mv -f ${BUILD_DIR}/tmp.iso $(BUILD_DIR)/$(ISO_NAME).iso
 
-.PHONY: check_env
-check_env:
-	@if test "$(rhel_tree_url)" = ""; then \
-		echo "rhel_tree_url is undefined, Please check README"; \
-		exit 1; \
-	elif test "$(base_repo_url)" = ""; then \
-		echo "base_repo_url is undefined, Please check README"; \
-		exit 1; \
-	elif test "$(updates_repo_url)" = ""; then \
-		echo "updates_repo_url is undefined, Please check README"; \
-		exit 1; \
-	elif test "$(cdk_repo_url)" = ""; then \
-		echo "cdk_repo_url is undefined, Please check README"; \
-		exit 1; \
-	fi
-
 .PHONY: get_gh-release
 get_gh-release: init
 	curl -sL https://github.com/progrium/gh-release/releases/download/v2.2.1/gh-release_2.2.1_linux_x86_64.tgz > $(BUILD_DIR)/gh-release_2.2.1_linux_x86_64.tgz
@@ -71,11 +51,11 @@ get_gh-release: init
 	rm -fr $(BUILD_DIR)/gh-release_2.2.1_linux_x86_64.tgz
 
 .PHONY: release
-release: centos_iso get_gh-release
+release: fedora_iso get_gh-release
 	rm -rf release && mkdir -p release
-	cp $(BUILD_DIR)/minishift-centos7.iso release/
+	cp $(BUILD_DIR)/minishift-fedora26.iso release/
 	$(BUILD_DIR)/gh-release checksums sha256
-	$(BUILD_DIR)/gh-release create minishift/minishift-centos-iso $(VERSION) master v$(VERSION)
+	$(BUILD_DIR)/gh-release create minishift/minishift-fedora-iso $(VERSION) master v$(VERSION)
 
 $(BIN_DIR)/minishift:
 	@echo "Downloading latest minishift binary..."
@@ -88,3 +68,4 @@ $(BIN_DIR)/minishift:
 .PHONY: test
 test: $(BIN_DIR)/minishift
 	avocado run $(SHOW_LOG) tests/test.py
+

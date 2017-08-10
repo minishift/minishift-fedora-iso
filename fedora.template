@@ -1,37 +1,40 @@
-sshpw --username=root --plaintext centos
 # Firewall configuration
 firewall --disabled
 selinux --enforcing
 
 # Use network installation
-url --url="http://mirror.centos.org/centos/7/os/x86_64/"
 network --bootproto=dhcp --device=eth0 --activate --onboot=on
 network --bootproto=dhcp --device=eth1 --activate --onboot=on
 skipx
-rootpw --plaintext centos
 auth --useshadow --passalgo=sha512
+sshpw --username=root --plaintext fedora
+rootpw --plaintext fedora
+services --enabled=sshd,rc-local
 
 timezone --utc America/New_York
-bootloader --location=mbr --append="no_timer_check console=ttyS0 console=tty0 net.ifnames=0 biosdevname=0"
+keyboard us
+#bootloader --location=mbr --append="no_timer_check console=ttyS0 console=tty0 net.ifnames=0 biosdevname=0"
+#bootloader --timeout=1 --append="no_timer_check console=tty1 console=ttyS0,115200n8" --extlinux
+zerombr
 clearpart --all
-part / --fstype="ext4" --size=10240
+part / --size 10240 --fstype ext4
+shutdown
 
 #Repos
-repo --name=base --baseurl=http://mirror.centos.org/centos/7/os/x86_64/
-repo --name=updates --baseurl=http://mirror.centos.org/centos/7/updates/x86_64/
-repo --name=extras --baseurl=http://mirror.centos.org/centos/7/extras/x86_64/
-repo --name=atomic --baseurl=http://mirror.centos.org/centos/7/atomic/x86_64/adb/
-
-shutdown
+repo --name=fedora --mirrorlist=https://mirrors.fedoraproject.org/mirrorlist?repo=fedora-$releasever&arch=$basearch
+repo --name=updates --mirrorlist=https://mirrors.fedoraproject.org/mirrorlist?repo=updates-released-f$releasever&arch=$basearch
+#repo --name=updates-testing --mirrorlist=https://mirrors.fedoraproject.org/mirrorlist?repo=updates-testing-f$releasever&arch=$basearch
+url --mirrorlist=https://mirrors.fedoraproject.org/mirrorlist?repo=fedora-$releasever&arch=$basearch
 
 %packages  --excludedocs --instLangs=en
 @core
+dracut-live
 openssl
 bash
-centos-logos
+fedora-logos
 docker
 dracut
-e4fsprogs
+e2fsprogs
 efibootmgr
 grub2
 grub2-efi
@@ -102,8 +105,8 @@ mv handle-user-data /etc/rc.d/init.d/
 chmod +x /etc/rc.d/init.d/handle-user-data
 /sbin/restorecon /etc/rc.d/init.d/handle-user-data
 
+echo -e "#!/bin/bash\n/etc/rc.d/init.d/handle-user-data" >> /etc/rc.d/rc.local
 chmod +x /etc/rc.d/rc.local
-echo "/etc/rc.d/init.d/handle-user-data" >> /etc/rc.d/rc.local
 
 # Remove redhat-logo and firmware package to help with reduce box size
 yum remove -y redhat-logos linux-firmware
@@ -123,32 +126,36 @@ rm cert-gen.sh.base64
 chmod +x cert-gen.sh
 mv cert-gen.sh /opt
 
+
 # This unit file will take precedence over unit file which present /usr location
 # and it have daemon running using cert so when restart happen then also docker
 # daemon works as expected.
+
 cat << EOF > /etc/systemd/system/docker.service
 [Unit]
 Description=Docker Application Container Engine
 Documentation=http://docs.docker.com
-After=network.target rc-local.service
-Requires=docker-cleanup.timer
+After=network.target rc-local.service docker-containerd.service
+#Requires=docker-cleanup.timer
+Requires=docker-containerd.service
 
 [Service]
 Type=notify
 NotifyAccess=all
 Environment=GOTRACEBACK=crash
 Environment=DOCKER_HTTP_HOST_COMPAT=1
-Environment=PATH=/usr/libexec/docker:/usr/bin:/usr/sbin
 ExecStartPre=/opt/cert-gen.sh
 ExecStart=/usr/bin/dockerd-current -H tcp://0.0.0.0:2376 \
                        -H unix:///var/run/docker.sock \
                        --selinux-enabled \
                        --log-driver=journald \
                        --signature-verification=false \
-                       --add-runtime docker-runc=/usr/libexec/docker/docker-runc-current \
-                       --default-runtime=docker-runc \
+                       --add-runtime oci=/usr/libexec/docker/docker-runc-current \
+                       --default-runtime=oci \
                        --exec-opt native.cgroupdriver=systemd \
                        --userland-proxy-path=/usr/libexec/docker/docker-proxy-current \
+                       --containerd /run/containerd.sock \
+                       --init-path=/usr/libexec/docker/docker-init-current \
                        --storage-driver devicemapper \
                        --tlsverify --tlscacert /etc/docker/ca.pem \
                        --tlscert /etc/docker/server.pem \
