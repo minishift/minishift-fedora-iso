@@ -2,7 +2,7 @@
 # vi: set ft=ruby :
 
 Vagrant.configure(2) do |config|
-  config.vm.box = "fedora/28"
+  config.vm.box = "generic/fedora28"
 
   config.vm.provider "virtualbox" do |v, override|
     v.memory = 2048
@@ -23,11 +23,14 @@ Vagrant.configure(2) do |config|
     target_path = ENV['USERPROFILE'].gsub(/\\/,'/').gsub(/[[:alpha:]]{1}:/){|s|'/' + s.downcase.sub(':', '')}
     config.vm.synced_folder ENV['USERPROFILE'], target_path, type: 'sshfs', sshfs_opts_append: '-o umask=000 -o uid=1000 -o gid=1000'
   else
-    config.vm.synced_folder ENV['HOME'], ENV['HOME'], type: 'sshfs', sshfs_opts_append: '-o umask=000 -o uid=1000 -o gid=1000'
+    config.vm.synced_folder "/opt/fedora", "/opt", type: 'sshfs', sshfs_opts_append: '-o umask=000 -o uid=1000 -o gid=1000'
   end
 
   config.vm.provision "shell", inline: <<-SHELL
-    # Docker and parted is required to get selinux context: https://bugzilla.redhat.com/show_bug.cgi?id=1303565
-    sudo dnf install -y git livecd-tools docker parted
+    # Docker and parted packages are required to get selinux context: https://bugzilla.redhat.com/show_bug.cgi?id=1303565
+    sudo dnf -y update
+    sudo dnf install -y git livecd-tools docker parted make sudo gettext
+    cd /opt/
+    make
   SHELL
 end
