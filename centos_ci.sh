@@ -21,20 +21,20 @@ yum -y install \
   make \
   git \
   epel-release \
-  livecd-tools \
   curl \
   docker \
-  parted \
   kvm \
   qemu-kvm \
-  libvirt
+  libvirt \
+  https://releases.hashicorp.com/vagrant/2.1.5/vagrant_2.1.5_x86_64.rpm
 
 # Start Libvirt
 sudo systemctl start libvirtd
 
-# Install Avocado
-sudo curl https://repos-avocadoproject.rhcloud.com/static/avocado-el.repo -o /etc/yum.repos.d/avocado.repo
-sudo yum install -y avocado
+# Install vagrant-sshfs plugin
+vagrant plugin install vagrant-sshfs
+
+vagrant up
 
 # Setup test drivers
 curl -L https://github.com/dhiltgen/docker-machine-kvm/releases/download/v0.7.0/docker-machine-driver-kvm > /usr/local/bin/docker-machine-driver-kvm && \
