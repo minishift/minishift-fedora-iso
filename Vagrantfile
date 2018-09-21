@@ -28,6 +28,7 @@ Vagrant.configure(2) do |config|
 
   config.vm.provision "shell", inline: <<-SHELL
     # Docker and parted is required to get selinux context: https://bugzilla.redhat.com/show_bug.cgi?id=1303565
-    sudo dnf install -y git livecd-tools docker parted
+    sudo dnf install -y git livecd-tools docker parted make sudo gettext
+    make
   SHELL
 end
