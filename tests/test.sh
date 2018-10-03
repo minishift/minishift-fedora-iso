@@ -102,7 +102,7 @@ function verify_sshfs_installation() {
 }
 
 function verify_nfs_installation() {
-  expected="mount.nfs: (linux nfs-utils 2.3.2)"
+  expected="mount.nfs: (linux nfs-utils 2.3.3)"
   output=`$BINARY ssh -- sudo /sbin/mount.nfs -V /need/for/version`
   assert_equal "$output" "$expected"
   print_success_message "NFS installation"
@@ -110,7 +110,7 @@ function verify_nfs_installation() {
 
 function verify_bind_mount() {
   output=`$BINARY ssh -- 'findmnt | grep "\[/var/lib/" | wc -l'`
-  assert_equal $output "8"
+  assert_equal $output "11"
   print_success_message "Bind mount check"
 }
 
