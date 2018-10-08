@@ -33,7 +33,7 @@ echo $password > $passfile
 
 # Generate the CA
 openssl genrsa -aes256 -passout file:$passfile -out ca-key.pem 2048
-openssl req -new -x509 -passin file:$passfile -days 365 -key ca-key.pem -sha256 -out ca.pem -subj "/C=/ST=/L=/O=/OU=/CN=example.com"
+openssl req -new -x509 -passin file:$passfile -days 365 -key ca-key.pem -sha256 -out ca.pem -subj "/C=US/ST=NY/L=New York/O=Example/OU=X/CN=example.com"
 
 # Generate Server Key and Sign it
 openssl genrsa -out server-key.pem 2048
