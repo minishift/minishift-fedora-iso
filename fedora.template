@@ -48,6 +48,10 @@ nfs-utils
 go-hvkvp
 python-setuptools
 dnsmasq
+podman
+buildah
+skopeo
+cri-o
 
 #Packages to be removed
 -aic94xx-firmware

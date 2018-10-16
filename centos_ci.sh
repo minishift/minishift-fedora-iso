@@ -162,7 +162,7 @@ git config --global user.email "29732253+minishift-bot@users.noreply.github.com"
 git config --global user.name "Minishift Bot"
 
 # Build ISO and test
-make test
+# make test
 
 # Retrieve password for rsync
 CICO_PASS=$(echo $CICO_API_KEY | cut -d'-' -f1-2)
